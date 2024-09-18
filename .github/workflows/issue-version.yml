@@ -30,25 +30,28 @@ jobs:
           const currentTitle = context.payload.issue.title;
           console.log(`Current title: "${currentTitle}"`);
           
-          let newTitle;
-          if (currentTitle.toLowerCase().includes('[bug]')) {
-            newTitle = currentTitle.replace(/\[Bug\]/i, `[Bug] [${version}]`);
+          // Check if the title starts with [Bug]
+          if (currentTitle.trim().toLowerCase().startsWith('[bug]')) {
+            // Remove any existing version tag if present
+            let newTitle = currentTitle.replace(/^\[Bug\]\s*(\[[^\]]+\]\s*)?/i, '').trim();
+            // Add [Bug] and [version] tags with a colon
+            newTitle = `[Bug][${version}]: ${newTitle}`;
+            
+            console.log(`New title: "${newTitle}"`);
+            
+            try {
+              await github.rest.issues.update({
+                issue_number: issueNumber,
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                title: newTitle
+              });
+              console.log('Successfully updated issue title');
+            } catch (error) {
+              console.error('Failed to update issue title');
+              console.error(error);
+              core.setFailed('Failed to update issue title');
+            }
           } else {
-            newTitle = `[Bug] [${version}] ${currentTitle}`;
-          }
-          
-          console.log(`New title: "${newTitle}"`);
-          
-          try {
-            await github.rest.issues.update({
-              issue_number: issueNumber,
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              title: newTitle
-            });
-            console.log('Successfully updated issue title');
-          } catch (error) {
-            console.error('Failed to update issue title');
-            console.error(error);
-            core.setFailed('Failed to update issue title');
+            console.log('Title does not start with [Bug]. No changes made.');
           }
