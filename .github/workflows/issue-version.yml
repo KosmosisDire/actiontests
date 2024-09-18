@@ -1,48 +1,54 @@
-name: "Update Issue Title with Version"
+name: Update Issue Title with Version
+
 on:
   issues:
     types: [opened]
+
 jobs:
-  update-title:
+  update-issue-title:
     runs-on: ubuntu-latest
     permissions:
       issues: write
+
     steps:
-      - name: Update Issue Title
-        run: |
-          echo "Searching body for version..."
+    - name: Update Issue Title
+      uses: actions/github-script@v6
+      with:
+        github-token: ${{secrets.GITHUB_TOKEN}}
+        script: |
+          const issueNumber = context.issue.number;
+          const issueBody = context.payload.issue.body;
           
-          # Extract the version from the issue body
-          VERSION=$(echo "${{ github.event.issue.body }}" | grep -ozP "(?<=### Version\s\s)[0-9.b-]+" || echo "")
+          console.log('Extracting version from issue body...');
           
-          echo "Extracted version: '$VERSION'"
+          // Extract version from the issue body
+          const versionMatch = issueBody.match(/### Version\s*([0-9.b-]+)/);
+          const version = versionMatch ? versionMatch[1] : 'unknown';
           
-          # Fallback to "unknown" if no version found
-          if [ -z "$VERSION" ]; then
-            echo "No version found, using 'unknown'"
-            VERSION="unknown"
-          fi
+          console.log(`Extracted version: ${version}`);
           
-          # Extract the current issue title
-          TITLE="${{ github.event.issue.title }}"
-          echo "Current title: '$TITLE'"
+          const currentTitle = context.payload.issue.title;
+          console.log(`Current title: "${currentTitle}"`);
           
-          # If the title contains the [Bug] tag, append the version after it
-          if echo "$TITLE" | grep -iq '\[bug\]'; then
-            NEW_TITLE=$(echo "$TITLE" | sed -E "s/\[Bug\]/[Bug] [$VERSION]/i")
-          else
-            # If [Bug] is not present, prepend [Bug] [Version] to the title
-            NEW_TITLE="[Bug] [$VERSION] $TITLE"
-          fi
+          let newTitle;
+          if (currentTitle.toLowerCase().includes('[bug]')) {
+            newTitle = currentTitle.replace(/\[Bug\]/i, `[Bug] [${version}]`);
+          } else {
+            newTitle = `[Bug] [${version}] ${currentTitle}`;
+          }
           
-          echo "New title: '$NEW_TITLE'"
+          console.log(`New title: "${newTitle}"`);
           
-          # Use GitHub CLI to update the issue title
-          if ! gh issue edit ${{ github.event.issue.number }} --title "$NEW_TITLE"; then
-            echo "Failed to update issue title"
-            exit 1
-          fi
-          
-          echo "Successfully updated issue title"
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          try {
+            await github.rest.issues.update({
+              issue_number: issueNumber,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              title: newTitle
+            });
+            console.log('Successfully updated issue title');
+          } catch (error) {
+            console.error('Failed to update issue title');
+            console.error(error);
+            core.setFailed('Failed to update issue title');
+          }
