@@ -12,6 +12,8 @@ jobs:
       # Extract version from issue body and update the issue title
       - name: Update Issue Title
         run: |
+
+          echo "${{ github.event.issue.body }}"
           # Extract the version from the issue body
           VERSION=$(echo "${{ github.event.issue.body }}" | grep -ozP "(?<=### Version\s\s)[0-9.b-]+")
 
@@ -22,6 +24,8 @@ jobs:
 
           # Extract the current issue title
           TITLE="${{ github.event.issue.title }}"
+
+          echo "$TITLE"
 
           # If the title contains the [Bug] tag, append the version after it
           if echo "$TITLE" | grep -iq '\[bug\]'; then
