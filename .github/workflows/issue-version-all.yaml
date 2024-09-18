@@ -59,7 +59,7 @@ jobs:
               
               // Remove any existing version tag if present and add new tags
               let newTitle = currentTitle.replace(/^\[Bug\]\s*/i, '').trim();
-              newTitle = `[Bug][${version}]: ${newTitle}`;
+              newTitle = `[Bug] [${version}]: ${newTitle}`;
               
               console.log(`New title: "${newTitle}"`);
               
