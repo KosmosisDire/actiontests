@@ -46,9 +46,16 @@ jobs:
               
               console.log(`Processing issue #${issue.number}: "${currentTitle}"`);
               
-              // Extract version from the issue body
-              const versionMatch = issue.body.match(/### Version\s*([0-9.b-]+)/);
-              const version = versionMatch ? versionMatch[1] : 'unknown';
+              // Extract version from the issue body, handling null case
+              let version = 'unknown';
+              if (issue.body) {
+                const versionMatch = issue.body.match(/### Version\s*([0-9.b-]+)/);
+                if (versionMatch) {
+                  version = versionMatch[1];
+                }
+              } else {
+                console.log(`Issue #${issue.number} has no body`);
+              }
               
               // Remove any existing version tag if present and add new tags
               let newTitle = currentTitle.replace(/^\[Bug\]\s*/i, '').trim();
