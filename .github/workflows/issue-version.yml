@@ -1,45 +1,48 @@
 name: "Update Issue Title with Version"
-
 on:
   issues:
     types: [opened]
-
 jobs:
   update-title:
     runs-on: ubuntu-latest
-
+    permissions:
+      issues: write
     steps:
-      # Extract version from issue body and update the issue title
       - name: Update Issue Title
         run: |
-
-          echo "Search body"
+          echo "Searching body for version..."
           
           # Extract the version from the issue body
-          VERSION=$(echo "${{ github.event.issue.body }}" | grep -ozP "(?<=### Version\s\s)[0-9.b-]+")
+          VERSION=$(echo "${{ github.event.issue.body }}" | grep -ozP "(?<=### Version\s\s)[0-9.b-]+" || echo "")
           
-          echo "$VERSION"
-
+          echo "Extracted version: '$VERSION'"
+          
           # Fallback to "unknown" if no version found
           if [ -z "$VERSION" ]; then
+            echo "No version found, using 'unknown'"
             VERSION="unknown"
           fi
-
+          
           # Extract the current issue title
           TITLE="${{ github.event.issue.title }}"
-
-          echo "$TITLE"
-
+          echo "Current title: '$TITLE'"
+          
           # If the title contains the [Bug] tag, append the version after it
           if echo "$TITLE" | grep -iq '\[bug\]'; then
-            NEW_TITLE=$(echo "$TITLE" | sed -E "s/\[Bug\]/\[Bug\] \[$VERSION\]/i")
+            NEW_TITLE=$(echo "$TITLE" | sed -E "s/\[Bug\]/[Bug] [$VERSION]/i")
           else
             # If [Bug] is not present, prepend [Bug] [Version] to the title
             NEW_TITLE="[Bug] [$VERSION] $TITLE"
           fi
-
+          
+          echo "New title: '$NEW_TITLE'"
+          
           # Use GitHub CLI to update the issue title
-          gh issue edit ${{ github.event.issue.number }} --title "$NEW_TITLE"
-
+          if ! gh issue edit ${{ github.event.issue.number }} --title "$NEW_TITLE"; then
+            echo "Failed to update issue title"
+            exit 1
+          fi
+          
+          echo "Successfully updated issue title"
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
