@@ -13,7 +13,7 @@ jobs:
       - name: Update Issue Title
         run: |
           # Extract the version from the issue body
-          VERSION=$(echo "${{ github.event.issue.body }}" | grep -oP '(?<=### Version\s*\n)\S+')
+          VERSION=$(echo "${{ github.event.issue.body }}" | grep -ozP "(?<=### Version\s\s)[0-9.b-]+")
 
           # Fallback to "unknown" if no version found
           if [ -z "$VERSION" ]; then
