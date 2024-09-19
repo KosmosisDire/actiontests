@@ -59,7 +59,7 @@ jobs:
           }
           
           // Respond to the issue
-          const response = `Thank you for reporting this issue. It is possible this issue has already been solved in the latest beta version. Please try updating to the latest beta version of the plugin (${latestBetaVersion}) and see if the issue persists.\nYou can find the latest beta release here: ${latestBeta.html_url}. Instructions for installing are located in the readme.`;
+          const response = `Thank you for reporting this issue. It is possible this issue has already been solved in the latest beta version.\nPlease try updating to the latest beta version of the plugin (${latestBetaVersion}) and see if the issue persists.\n\nYou can find the latest beta release here: ${latestBeta.html_url}.\nInstructions for installing are located in the readme.`;
           
           await github.rest.issues.createComment({
             issue_number: context.issue.number,
